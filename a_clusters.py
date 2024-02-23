@@ -18,25 +18,71 @@ class AClusters:
         no parallelism, dobule comupute 
         (adjacency matrix is symetrical, so half calcaulaiton are not needed)
         but it should be all right as proof of concept'''
+        print("... preparing similarity matrix")
         adjacency = squareform(pdist(self.original_data, 'euclidean'))
         result = np.zeros_like(adjacency)
         size = adjacency.shape[0]
         for i in range(size):
             for j in range(size):
                 result[i, j] = self._similarity_score(adjacency[i], adjacency[j])
+            result[i, i] = np.inf
         return result
-                
+
+
+    def most_similar(self, similarity_matrix, labels):
+        best_match = (0, 0, 0)  #row, index, similarity   
+        for i in range(similarity_matrix.shape[0]):
+            if labels[i] != 0:
+                continue # already clustered, for now not counting similarities between different clusters
+            best_for_i = np.argmin(similarity_matrix[i])
+            best_i_similarity = similarity_matrix[i][best_for_i]
+            if best_match[2] < best_i_similarity:
+                best_match = (i, best_for_i, best_i_similarity)
+        return best_match[:2]
+
 
     def run(self):
         points_similarity = self._prepare_similarity_matrix()
-        return None
+        print("DATA:  ", self.original_data)
+        print("SCORE: ", points_similarity)
+        labels = np.zeros(points_similarity.shape[0])
+        nr_of_clusters = 0
+        print("... calculating clusters")
+        for i in range(len(labels)): # change that
+            x, y = self.most_similar(points_similarity, labels)
+            if labels[x] == 0 and labels[y] == 0:
+                nr_of_clusters += 1
+                next_cluster = nr_of_clusters
+                labels[x] = next_cluster
+                labels[y] = next_cluster
+            elif labels[x] == 0:
+                labels[x] = labels[y]
+            elif labels[y] == 0:
+                labels[y] = labels[x]
+            else:
+                print('merging clusters not implemented')
+        return labels
     
 
 if __name__ == "__main__":
     import pandas as pd
-    data = pd.read_csv('dbscan_dataset.csv').to_numpy()
+    test_name = 'start_v3' # beginnings, 
+    data = pd.read_csv(f'{test_name}_dataset.csv').to_numpy()
     x = AClusters(data)
-    x.run()
+    labels = x.run()
+    unique_labels = np.unique(labels)
+    print(len(unique_labels), 'clusters found after 1st iteration')
+    import matplotlib.pyplot as plt
+    plt.figure(figsize=(8, 6))
+    for label in unique_labels:
+        label_data = data[labels == label]
+        plt.scatter(label_data[:, 0], label_data[:, 1], label=f'C_{label}')
+        for i, txt in enumerate(np.where(labels == label)[0]):
+            plt.annotate(txt, (label_data[i, 0], label_data[i, 1]))
+    plt.show()
+
+    
+
     '''NOTES:
 - No, no any custom thershholds. First step is trivial - find biggest value 
 in similarity matrix and mark rows that this value represent as having common cluster label. 
