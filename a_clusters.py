@@ -19,15 +19,13 @@ class AClusters:
         (adjacency matrix is symetrical, so half calcaulaiton are not needed)
         but it should be all right as proof of concept'''
         adjacency = squareform(pdist(data, 'euclidean'))
-        detailed_similarity = np.zeros_like(adjacency)
+        result = np.zeros_like(adjacency)
         for i in range(n):
             for j in range(n):
-                detailed_similarity[i, j] = _similarity_score(adjacency[i], adjacency[j])
-        return detailed_similarity
+                result[i, j] = _similarity_score(adjacency[i], adjacency[j])
+        return result
                 
 
-
-    
-
     def run():
+        points_similarity = _prepare_similarity_matrix(original_data)
         return None
