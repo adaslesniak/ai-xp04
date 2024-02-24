@@ -13,12 +13,14 @@ class AClusters:
 
     def _similarity_score(self, some_value:np.ndarray, other_value:np.ndarray):
         raw_differences = some_value - other_value
-        squar_differences = np.square(raw_differences)
-        return np.sqrt(np.sum(squar_differences)) # TODO: try without sqrt
+        squared_differences = np.square(raw_differences)
+        return np.sqrt(np.sum(squared_differences)) # TODO: try without sqrt
 
 
     def _prepare_similarity_matrix(self):
-        print("... preparing similarity matrix")
+        """It's very similar to adjacency matrix, except it scores for similarity between points
+        Not only distance to other point is stored here, but also it's similarity, how it relates
+        to each other point in the data"""
         adjacency = squareform(pdist(self.original_data, 'euclidean'))
         self.detailed_similarity = np.zeros_like(adjacency)
         size = adjacency.shape[0]
@@ -50,6 +52,34 @@ class AClusters:
         b_indices = self.clusters[cluster_b]
         distances = self.detailed_similarity[np.ix_(a_indices, b_indices)]
         return np.mean(distances)
+    
+
+    def _recalculate_clusters_similarity(self, enlarged, dropped):
+        """Drop merged, and recalculate similarity scores for column[enlarged] and row[enlarged]
+        When two clusters are merged one is removed, the other is changed and it's
+        similarity must be recalculated."""
+        self.clustered_similarity = np.delete(self.clustered_similarity, dropped, axis=0)  # Remove row
+        self.clustered_similarity = np.delete(self.clustered_similarity, dropped, axis=1)  # Remove column
+        # once information about cluster that was merged in into other is removed, 
+        # we need recalculate scores for enlarged one
+        for score_index, score in enumerate(self.clustered_similarity[enlarged]):
+            if(score_index == enlarged):
+                continue
+            self.clustered_similarity[enlarged][score_index] = self._clusters_similarity(enlarged, score_index)
+        self.clustered_similarity[:, enlarged] = self.clustered_similarity[enlarged]
+        
+    
+    def _merge_clusters(self, x, y):
+        self.clusters[x].extend(self.clusters[y])
+        self.clusters.pop(y)
+
+
+    def _find_clusters(self, how_many):
+        print("... calculating clusters")
+        while len(self.clusters) > how_many: # change that
+            x, y = self._most_similar_clusters()
+            self._merge_clusters(x, y)
+            self._recalculate_clusters_similarity(x, y)
 
 
     def _flatten_clusters(self):
@@ -65,30 +95,6 @@ class AClusters:
         self._prepare_initial_clusters()
         self._find_clusters(3)
         return self._flatten_clusters()
-
-    
-
-    def _recalculate_clusters_similarity(self, enlarged, dropped):
-        """Drop merged, and recalculate similarity scores for column[enlarged] and row[enlarged]
-        When two clusters are merged one is removed, the other is changed and it's
-        similarity must be recalculated."""
-        self.clustered_similarity = np.delete(self.clustered_similarity, dropped, axis=0)  # Remove row
-        self.clustered_similarity = np.delete(self.clustered_similarity, dropped, axis=1)  # Remove column
-        # once information about cluster that was merged in into other is removed, 
-        # we need recalculate scores for enlarged one
-        
-    
-    def _merge_clusters(self, x, y):
-        self.clusters[x].extend(self.clusters[y])
-        self.clusters.pop(y)
-
-
-    def _find_clusters(self, how_many):
-        print("... calculating clusters")
-        while len(self.clusters) <= how_many: # change that
-            x, y = self._most_similar_clusters()
-            self._merge_clusters(x, y)
-            self._recalculate_clusters_similarity(x, y)
         
     
 
@@ -115,10 +121,8 @@ if __name__ == "__main__":
     
 
     '''NOTES:
-- That isn't clear - . 
 
-- Decide if new point belongs to established cluster.
-Find average similarity to all points in this cluster and then check if 
+- Find average similarity to all points in this cluster and then check if 
 it's still highest value. That feels more robust. It must be "find most similar points in dataset, 
 not nearest neighbors of just one point. 
 
