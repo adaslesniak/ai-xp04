@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.spatial.distance import pdist, squareform
-
+import pandas as pd
 
 class AClusters:
 
@@ -9,6 +9,31 @@ class AClusters:
         self.detailed_similarity = None # calculated once, similarity of each pair of points
         self.clustered_similarity = None # recalculated after every step
         self.clusters = None
+
+    
+    '''def print_clusters(self):
+        print(" ----------- CLUSTERS ARE: -----------")
+        for row in self.clustered_similarity:
+
+        return None'''
+    
+    def print_clusters_similarity(self):
+        print("--------- CLUSTERS SIMILARITY: ----------")
+        debug_labels = []
+        for i in range(len(self.clusters)):
+            debug_labels.append(f"c_{i}")
+        df = pd.DataFrame(self.clustered_similarity, index=debug_labels, columns=debug_labels)
+        print(df)
+        print("-----------------------------------------")
+
+    def print_detailed_similarity(self):
+        print("--------- POINTS SIMILARITY: ----------")
+        debug_labels = []
+        for i in range(len(self.detailed_similarity)):
+            debug_labels.append(f"p_{i}")
+        df = pd.DataFrame(self.detailed_similarity, index=debug_labels, columns=debug_labels)
+        print(df)
+        print("-----------------------------------------")
     
 
     def _similarity_score(self, some_value:np.ndarray, other_value:np.ndarray):
@@ -42,8 +67,9 @@ class AClusters:
         for i in range(self.clustered_similarity.shape[0]):
             best_for_i = np.argmin(self.clustered_similarity[i])
             best_i_similarity = self.clustered_similarity[i][best_for_i]
-            if best_match[2] < best_i_similarity:
+            if best_match[2] > best_i_similarity:
                 best_match = (i, best_for_i, best_i_similarity)
+        print('most fit: ', best_match)
         return best_match[:2]
     
 
@@ -77,7 +103,9 @@ class AClusters:
     def _find_clusters(self, how_many):
         print("... calculating clusters")
         while len(self.clusters) > how_many: # change that
+            self.print_clusters_similarity()
             x, y = self._most_similar_clusters()
+            print(f"merging clusters {x} and {y}")
             self._merge_clusters(x, y)
             self._recalculate_clusters_similarity(x, y)
 
@@ -92,6 +120,7 @@ class AClusters:
 
     def run(self):
         self._prepare_similarity_matrix()
+        self.print_detailed_similarity()
         self._prepare_initial_clusters()
         self._find_clusters(3)
         return self._flatten_clusters()
