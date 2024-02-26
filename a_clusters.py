@@ -11,11 +11,11 @@ class AClusters:
         self.clusters = None
 
     
-    '''def print_clusters(self):
+    def print_clusters(self):
         print(" ----------- CLUSTERS ARE: -----------")
-        for row in self.clustered_similarity:
-
-        return None'''
+        for i_row, row in enumerate(self.clusters):
+            print("c_{i_row}:  ", row)
+        return None
     
     def print_clusters_similarity(self):
         print("--------- CLUSTERS SIMILARITY: ----------")
@@ -63,7 +63,7 @@ class AClusters:
 
 
     def _most_similar_clusters(self):
-        best_match = (0, 0, 0)  #row, index, similarity   
+        best_match = (0, 0, 100000)  #row, index, similarity   
         for i in range(self.clustered_similarity.shape[0]):
             best_for_i = np.argmin(self.clustered_similarity[i])
             best_i_similarity = self.clustered_similarity[i][best_for_i]
@@ -123,6 +123,7 @@ class AClusters:
         self.print_detailed_similarity()
         self._prepare_initial_clusters()
         self._find_clusters(3)
+        self.print_clusters()
         return self._flatten_clusters()
         
     
