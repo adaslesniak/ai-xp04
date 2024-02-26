@@ -14,7 +14,7 @@ class AClusters:
     def print_clusters(self):
         print(" ----------- CLUSTERS ARE: -----------")
         for i_row, row in enumerate(self.clusters):
-            print("c_{i_row}:  ", row)
+            print(f"c_{i_row}:  ", row)
         return None
     
     def print_clusters_similarity(self):
@@ -111,11 +111,15 @@ class AClusters:
 
 
     def _flatten_clusters(self):
-        flattened = []
+        map = []
         for cluster_index, cluster_points in enumerate(self.clusters):
             # Extend the output list with the current index multiplied by the length of the sublist
-            flattened.extend([cluster_index] * len(cluster_points))
-        return flattened
+            for cluster_point in cluster_points:
+                map.append((cluster_point, cluster_index))
+        flatened = [0] * len(map)
+        for mapped in map:
+            flatened[mapped[0]] = mapped[1]
+        return flatened
 
 
     def run(self):
